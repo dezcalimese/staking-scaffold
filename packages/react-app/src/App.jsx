@@ -1,7 +1,7 @@
 import WalletConnectProvider from "@walletconnect/web3-provider";
 //import Torus from "@toruslabs/torus-embed"
 import WalletLink from "walletlink";
-import { Alert, Button, Col, Menu, Row, List } from "antd";
+import { Alert, Button, Col, Menu, Row, List, Divider } from "antd";
 import "antd/dist/antd.css";
 import React, { useCallback, useEffect, useState } from "react";
 import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
@@ -251,6 +251,17 @@ function App(props) {
     readContracts && readContracts.Staker ? readContracts.Staker.address : null,
   );
   if (DEBUG) console.log("💵 stakerContractBalance", stakerContractBalance);
+
+  // ** keep track of reward rate per block: 
+  const rewardRatePerBlock = useContractReader(readContracts, "Staker", "rewardRatePerBlock")
+  console.log("💵 Reward Rate:", rewardRatePerBlock);
+
+  // ** keep track of a varable from the contract in the local React state:
+  const claimPeriodLeft = useContractReader(readContracts, "Staker", "claimPeriodLeft");
+  console.log("⏳ Claim Period Left:", claimPeriodLeft);
+
+  const withdrawalTimeLeft = useContractReader(readContracts, "Staker", "withdrawalTimeLeft");
+  console.log("⌛️ Withdrawal Time Left:", withdrawalTimeLeft);
 
   // ** keep track of total 'threshold' needed of ETH
   const threshold = useContractReader(readContracts, "Staker", "threshold");
@@ -516,22 +527,36 @@ function App(props) {
               <Address value={readContracts && readContracts.Staker && readContracts.Staker.address} />
             </div>
 
-            <div style={{ padding: 8, marginTop: 32 }}>
-              <div>Timeleft:</div>
-              {timeLeft && humanizeDuration(timeLeft.toNumber() * 1000)}
+            <Divider dashed />
+            
+            <div style={{ padding: 8, marginTop: 16 }}>
+              <div>Reward Rate Per Second:</div>
+              <Balance balance={rewardRatePerBlock} fontSize={64} /> ETH 
             </div>
 
-            <div style={{ padding: 8 }}>
+            <div style={{ padding: 8, marginTop: 16, fontWeight: "bold"}}>
+              <div>Claim Period Left:</div>
+              {claimPeriodLeft && humanizeDuration(claimPeriodLeft.toNumber() * 1000)}
+            </div>
+
+            <div style={{ padding: 8, marginTop: 16, fontWeight: "bold" }}>
+              <div>Withdrawal Period Left:</div>
+              {withdrawalTimeLeft && humanizeDuration(withdrawalTimeLeft.toNumber() * 1000)}
+            </div>
+
+            <Divider dashed />
+
+            <div style={{ padding: 8, marginTop: 16, fontWeight: "bold"}}>
               <div>Total staked:</div>
               <Balance balance={stakerContractBalance} fontSize={64} />/<Balance balance={threshold} fontSize={64} />
             </div>
 
-            <div style={{ padding: 8 }}>
+            <div style={{ padding: 8, marginTop: 16, fontWeight: "bold" }}>
               <div>You staked:</div>
               <Balance balance={balanceStaked} fontSize={64} />
             </div>
 
-            <div style={{ padding: 8 }}>
+            <div style={{ padding: 8, marginTop: 16 }}>
               <Button
                 type={"default"}
                 onClick={() => {
@@ -577,7 +602,7 @@ function App(props) {
                 renderItem={item => {
                   return (
                     <List.Item key={item.blockNumber}>
-                      <Address value={item.args[0]} ensProvider={mainnetProvider} fontSize={16} /> =>
+                      <Address value={item.args[0]} ensProvider={mainnetProvider} fontSize={16} />
                       <Balance balance={item.args[1]} />
                     </List.Item>
                   );
